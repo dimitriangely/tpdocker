@@ -179,5 +179,3 @@ Isolation frontend / backend / base de données
 Build multi-étapes (Next.js)
 
 Nous avons maintenant une architecture proche d’une vraie stack de production, prête à évoluer.
-
-Pour lancer le projet, se placer dans dossier ou se situe le fichier docker-compose.yml et faire : docker-compose up --build
