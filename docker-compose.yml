@@ -1,0 +1,56 @@
+
+services:                               # Début de la liste des services
+
+  frontend:                             # Service pour l'application React
+    build:                              # On demande à Docker de construire une image
+      context: ./front                  # Le code du frontend se trouve dans le dossier ./front
+      dockerfile: Dockerfile            # Nom du Dockerfile utilisé pour construire l'image
+    container_name: frontend            # Nom explicite du conteneur (facilite le debug)
+    ports:
+      - "3000:3000"                     # On mappe le port 3000 de la machine hôte -> port 3000 du conteneur
+    #environment:
+     # - NODE_ENV=development            # Variable d'environnement simple (ex : React en mode dev)
+    depends_on:
+      - backend                         # On indique que le frontend démarre après le backend (ordre logique)
+
+  backend:                              # Service pour l'API Node.js/Express
+    build:                              # Construction de l'image backend
+      context: ./back                   # Code du backend dans le dossier ./back
+      dockerfile: Dockerfile            # Nom du Dockerfile utilisé
+    container_name: backend             # Nom explicite du conteneur backend
+    ports:
+      - "4000:3000"                     # Port 4000 exposé pour debug/API direct (optionnel mais pratique)
+    environment:                        # Variables d'environnement pour la connexion à la base PostgreSQL
+      - NODE_ENV=development            # Environnement d'exécution (dev ici)
+      - PORT=4000                       # Port sur lequel l'app Express écoute à l'intérieur du conteneur
+      - DB_HOST=db                      # Nom du service PostgreSQL (accessible via le réseau Docker)
+      - DB_PORT=5432                    # Port standard de PostgreSQL
+      - DB_NAME=myapp                   # Nom de la base de données
+      - DB_USER=myuser                  # Utilisateur de la base
+      - DB_PASSWORD=mypassword          # Mot de passe de la base
+    depends_on:
+      - db                              # Le backend doit attendre que la base soit démarrée
+
+  db:                                   # Service pour la base de données PostgreSQL
+    image: postgres:16-alpine           # Image officielle PostgreSQL, version légère (alpine)
+    container_name: db                  # Nom explicite du conteneur PostgreSQL
+    environment:                        # Variables d'environnement pour initialiser la base
+      - POSTGRES_DB=myapp               # Nom de la base créée au démarrage
+      - POSTGRES_USER=myuser            # Utilisateur PostgreSQL créé au démarrage
+      - POSTGRES_PASSWORD=mypassword    # Mot de passe pour cet utilisateur
+    volumes:
+      - db-data:/var/lib/postgresql/data # Volume persistant pour stocker les données de la base
+
+  nginx:                                # Service pour le reverse proxy Nginx
+    build:                              # On construit une image Nginx personnalisée
+      context: ./nginx                  # Les fichiers Nginx (Dockerfile + nginx.conf) sont dans ./nginx
+      dockerfile: Dockerfile            # Nom du Dockerfile utilisé pour Nginx
+    container_name: nginx               # Nom explicite du conteneur Nginx
+    ports:
+      - "80:80"                         # On expose le port 80 de Nginx sur le port 80 de la machine hôte
+    depends_on:
+      - frontend                        # Nginx doit démarrer après le frontend
+      - backend                         # Nginx doit démarrer après le backend
+
+volumes:                                # Déclaration des volumes Docker
+  db-data:                              # Volume nommé pour persister les données PostgreSQL
